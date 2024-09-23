@@ -1,0 +1,49 @@
+services:
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    image: halisson/nginx
+    container_name: nginx
+    networks:
+      - fc-network
+    ports:
+      - "8080:80"
+    depends_on:
+      - node
+
+  node:
+    build:
+      context: ./node
+      dockerfile: Dockerfile
+    image: halisson/node
+    container_name: app
+    networks:
+      - fc-network
+    working_dir: /usr/src/app
+    volumes:
+      - ./node:/usr/src/app
+      - /usr/src/app/node_modules
+    expose:
+      - "3000"
+    command: "npx nodemon index.js"
+    depends_on:
+      - db
+
+  db:
+    image: mysql:5.7
+    container_name: db
+    command: --innodb-use-native-aio=0
+    restart: always
+    tty: true
+    volumes:
+      - ./mysql:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=full_cycle
+    networks:
+      - fc-network
+
+networks:
+  fc-network:
+    driver: bridge
